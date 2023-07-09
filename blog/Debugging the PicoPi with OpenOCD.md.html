@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" type="text/css" href="/dist/index.css">
+  <style>
+	img { max-width:900px; }
+	.codeblock { 
+	background: #B0B0B0; padding:1px 10px 0px 10px; border-radius: 5px; overflow-x:auto;
+	}
+	.inlineCoed {
+	font-size: inherit; color: #202020;
+	}
+</style>
+</head>
+<body style="background: #F0F0F0;">
+<div class="container section" >
+<div class="section" style="padding:20px; margin:0px; z-index: 5; text-align:left; background-color: #DCDCDC; border-radius: 5px; ">
+<h1 class="title" id="Debugging_Pico_Pi">Debugging Pico Pi</h1>
+<p></p>
+<p>&emsp;If you're a hobbyist delving into the world of Pico Pi, you know that smooth development workflows can make all the difference. Today, we're going to explore a nifty solution that allows you to attach a debugger to your Pico Pi and seamlessly integrate its output into Neovim. Say goodbye to clunky tool switching and say hello to a more efficient coding experience!</p>
+<p></p>
+<p>&emsp;To expedite the setup process and save valuable time, I opted for LunarVim, a well-crafted preconfigured Neovim setup. In this configuration, we will primarily rely on the nvim-dap, nvim-dap-ui, and nvim-projectconfig plugins to seamlessly integrate with OpenOCD and similar tools. To tailor LunarVim specifically for this purpose, we'll make some minor adjustments to the LunarVim configuration file. Feel free to access and customize my personalized configuration file <a href="https://chat.openai.com/" target="_blank">here</a> as a reference.</p>
+<p></p>
+<h1 class="title" id="The_LunarVim_Configuration">The LunarVim Configuration</h1>
+<p></p>
+<pre class="codeblock"><code style="tab-size: 4;" class="lua codeblock">
+-- Additional Plugins
+lvim.plugins = {
+  {
+    &quot;windwp/nvim-projectconfig&quot;,
+    config = function()
+      require(&quot;nvim-projectconfig&quot;).setup()
+    end
+  }
+}
+
+-- C adapter
+require(&#x27;dap&#x27;).adapters.cppdbg = {
+  type = &#x27;executable&#x27;,
+  command = &#x27;/path/to/cpptools-linux/extension/debugAdapters/bin/OpenDebugAD7&#x27;,
+  options = {
+    initialize_timeout_sec=20,
+  },
+  id = &#x27;cppdbg&#x27;
+}
+</pre></code>
+<p>&emsp;In this configuration, we've added the <code class="inlineCoed">nvim-projectconfig</code> plugin to LunarVim, enabling project-to-project configurations for the debugger. Additionally, we've customized the C adapter for the debugger. The specified command points to the <code class="inlineCoed">OpenDebugAD7</code> executable in the designated directory, which will facilitate the debugging process for C programs on the Pico Pi. Check the <code class="inlineCoed">nvim-dap</code> wiki for more information on that installation.</p>
+<p></p>
+<p>&emsp;To accommodate the Pico Pi's loading time for programs, we've increased the <code class="inlineCoed">initialize_timeout_sec</code> value to 20 seconds. This adjustment allows ample time for the program to be loaded into memory, ensuring a smooth debugging experience.</p>
+<h1 class="title" id="OpenOCD_with_Pico">OpenOCD with Pico</h1>
+<p>&emsp;This guide will only require a usb connection to the Pico and the Pico itself.  Now it is worth noting that this debug method will only allow you to use one core from the Pico Pi to run the program. You can find more information about the debugging methodology <a href="https://github.com/majbthrd/pico-debug" target="_blank">here</a>.  We will be using pico-debug to provide a debuggable interface to connect to.  Before we begin install the following programs.</p>
+<p></p>
+  <br>
+<h1 class="subtitle" style="margin-left:0px;" id="Install_OpenOCD">Install OpenOCD</h1>
+<pre class="codeblock"><code style="tab-size: 4;" class="sh codeblock">
+$ git clone https://github.com/raspberrypi/openocd.git
+$ cd openocd
+$ ./bootstrap
+$ ./configure
+$ make
+$ sudo make install
+</pre></code>
+  <br>
+<h1 class="subtitle" id="Install_GDB">Install GDB</h1>
+<p>debian/ubuntu:</p>
+<pre class="codeblock"><code style="tab-size: 4;" class="sh codeblock">sh
+$ apt install gdb-multiarch
+</pre></code>
+<p>arch:</p>
+<pre class="codeblock"><code style="tab-size: 4;" class="sh codeblock">sh
+$ paru -Syu gdb-multiarch
+</pre></code>
+  <br>
+<h1 class="subtitle" style="margin-left:0px;" id="Configure_your_project">Configure your project</h1>
+<p>I'm going to use <a href="https://github.com/raspberrypi/pico-examples/tree/master/blink" target="_blank">blink</a> from <a href="https://github.com/raspberrypi/pico-examples" target="_blank">pico-examples github</a> project.</p>
+<p></p>
+  <br>
+<h3 style="margin-left:0px;" id="Build_the_project">Build the project</h3>
+<pre class="codeblock"><code style="tab-size: 4;" class=" codeblock">
+$ git clone https://github.com/raspberrypi/pico-examples.git
+$ cd pico-examples/
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+</pre></code>
+<p></p>
+<p>Navigate to the blink project and open it with LunarVim.  Then we will need to edit the individual projects configuration.</p>
+<pre class="codeblock"><code style="tab-size: 4;" class="vim codeblock">
+:EditProjectConfig
+</pre></code>
+<p>This will open up the neovim config file for this particular project.  This config file will contain our projects debug configuration:</p>
+<pre class="codeblock"><code style="tab-size: 4;" class="lua codeblock">
+local dap = require(&#x27;dap&#x27;)
+
+dap.configurations.c = {
+  {
+    name = &#x27;blink debug&#x27;,
+    type = &#x27;cppdbg&#x27;,
+    request = &#x27;launch&#x27;,
+    MIMode = &#x27;gdb&#x27;,
+    miDebuggerPath = &#x27;/usr/bin/gdb-multiarch&#x27;,
+    setupCommands = {
+      {
+        text = &quot;target extended-remote localhost:3333&quot;,
+        description= &quot;load program&quot;,
+        ignoreFailures= false ,
+      },
+      {
+        text = &quot;file /path/to/pico-examples/build/blink/blink.elf&quot;,
+        description= &quot;load program&quot;,
+        ignoreFailures= false ,
+      },
+      {
+        text = &quot;load&quot;,
+        description= &quot;load program&quot;,
+        ignoreFailures= false ,
+      },
+      {
+        text = &quot;monitor reset init&quot;,
+        description= &quot;re-init program&quot;,
+        ignoreFailures= false ,
+      },
+    },
+    cwd = &#x27;${workspaceFolder}&#x27;,
+    program = &#x27;/path/to/pico/pico-examples/build/blink/blink.elf&#x27;,
+  },
+}
+</pre></code>
+<h1 class="title" style="margin-left:0px;" id="Start_Debugging">Start Debugging</h1>
+<h2 class="subtitle" style="margin-left:0px;" id="Load_the_Pico">Load the Pico</h2>
+<p>There are 2 version of the debug program that you can use from pico-debug <a href="https://github.com/majbthrd/pico-debug/releases/download/v10.05/pico-debug-gimmecache.uf2" target="_blank">gimmecache</a> and <a href="https://github.com/majbthrd/pico-debug/releases/download/v10.05/pico-debug-maxram.uf2" target="_blank">pico-debug-maxram.uf2</a>.  I'm going to use gimmecache.  You can read more about how each one works on the pico-debug <a href="https://github.com/majbthrd/pico-debug" target="_blank">github page</a>.</p>
+<p></p>
+<p>Load this on to the pico by holding the <code class="inlineCoed">BOOTSEL</code> and plugging it into your computer.  Then copy they <code class="inlineCoed">gimmecache.uf2</code> file into he pico pi.  Then navigate to the openocd scripts that got installed earlier.  For me they where installed into <code class="inlineCoed">/usr/local/share/openocd/scripts</code>.   Now run openocd:</p>
+<pre class="codeblock"><code style="tab-size: 4;" class="sh codeblock">
+openocd -f board/pico-debug.cfg
+</pre></code>
+<p></p>
+  <br>
+<p>Start LunarVim and start the debugger with <code class="inlineCoed">&lt;space&gt; d c</code></p>
+<img src="./Screenshot from 2023-07-09 10-45-57.png" alt="Screenshot from 2023-07-09 10-45-57.png" style="border-radius: 4px;" >
+<figcaption>It should take the debugger a few seconds to load the blink program on to the pico, but the result should look similar to this.</figcaption>
+<p></p>
+</div>
+</div>
+</body>
+</html>
