@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <link rel="icon" href="https://icon-library.com/images/e-icon/e-icon-29.jpg"/>
   <link rel="stylesheet" type="text/css" href="/dist/index.css">
   <style>
 	img { max-width:900px; }
@@ -11,6 +12,8 @@
 	font-size: inherit; color: #202020;
 	}
 </style>
+  <meta name="description" content="This post will explain how to integrate neovim with OpenOCD to debug the Pico Pi.">
+  <meta name="keywords" content="OpenOCD,Neovim,Pico Pi,LunarVim">
 </head>
 <body style="background: #F0F0F0;">
 <div class="container section" >
@@ -129,9 +132,9 @@ dap.configurations.c = {
 </pre></code>
 <h1 class="title" style="margin-left:0px;" id="Start_Debugging">Start Debugging</h1>
 <h2 class="subtitle" style="margin-left:0px;" id="Load_the_Pico">Load the Pico</h2>
-<p>There are 2 version of the debug program that you can use from pico-debug <a href="https://github.com/majbthrd/pico-debug/releases/download/v10.05/pico-debug-gimmecache.uf2" target="_blank">gimmecache</a> and <a href="https://github.com/majbthrd/pico-debug/releases/download/v10.05/pico-debug-maxram.uf2" target="_blank">pico-debug-maxram.uf2</a>.  I'm going to use gimmecache.  You can read more about how each one works on the pico-debug <a href="https://github.com/majbthrd/pico-debug" target="_blank">github page</a>.</p>
+<p>&emsp;There are 2 version of the debug program that you can use from pico-debug <a href="https://github.com/majbthrd/pico-debug/releases/download/v10.05/pico-debug-gimmecache.uf2" target="_blank">gimmecache</a> and <a href="https://github.com/majbthrd/pico-debug/releases/download/v10.05/pico-debug-maxram.uf2" target="_blank">pico-debug-maxram.uf2</a>.  I'm going to use gimmecache.  You can read more about how each one works on the pico-debug <a href="https://github.com/majbthrd/pico-debug" target="_blank">github page</a>.</p>
 <p></p>
-<p>Load this on to the pico by holding the <code class="inlineCoed">BOOTSEL</code> and plugging it into your computer.  Then copy they <code class="inlineCoed">gimmecache.uf2</code> file into he pico pi.  Then navigate to the openocd scripts that got installed earlier.  For me they where installed into <code class="inlineCoed">/usr/local/share/openocd/scripts</code>.   Now run openocd:</p>
+<p>&emsp;Load this on to the pico by holding the <code class="inlineCoed">BOOTSEL</code> and plugging it into your computer.  Then copy they <code class="inlineCoed">gimmecache.uf2</code> file into he pico pi.  Then navigate to the openocd scripts that got installed earlier.  For me they where installed into <code class="inlineCoed">/usr/local/share/openocd/scripts</code>.   Now run openocd:</p>
 <pre class="codeblock"><code style="tab-size: 4;" class="sh codeblock">
 openocd -f board/pico-debug.cfg
 </pre></code>
